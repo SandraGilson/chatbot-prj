@@ -112,7 +112,7 @@ async function generateNimReply(message) {
 
   return reply;
 }
-// Inject a mock generator in tests so testing does not call Gemini.
+// Inject a mock generator in tests so testing does not call NVIDIA NIM.
 export function createChatHandler({
   generateReply = generateNimReply,
 } = {}) {
@@ -219,9 +219,9 @@ export function createChatHandler({
         message: String(error?.message ?? "No error message").slice(0, 300),
       };
 
-      if (process.env.GEMINI_API_KEY) {
+      if (process.env.NVIDIA_API_KEY) {
         diagnostic.message = diagnostic.message.replaceAll(
-          process.env.GEMINI_API_KEY,
+          process.env.NVIDIA_API_KEY,
           "[REDACTED]"
         );
       }
