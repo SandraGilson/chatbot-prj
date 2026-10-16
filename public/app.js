@@ -14,13 +14,84 @@ function showToast(message) {
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
 }
+function renderMarkdown(value) {
+  const escaped = escapeHtml(value);
+  const lines = escaped.split(/\r?\n/);
+  const out = [];
+  let listType = "";
+  let inTable = false;
+
+  const closeList = () => {
+    if (listType) out.push(`</${listType}>`);
+    listType = "";
+  };
+  const closeTable = () => {
+    if (inTable) out.push("</tbody></table>");
+    inTable = false;
+  };
+  const inline = text => text
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const cells = trimmed.startsWith("|") && trimmed.endsWith("|")
+      ? trimmed.slice(1, -1).split("|").map(cell => cell.trim())
+      : null;
+
+    if (cells && cells.every(cell => /^:?-{3,}:?$/.test(cell))) continue;
+
+    if (cells) {
+      closeList();
+      if (!inTable) {
+        out.push("<table><tbody>");
+        inTable = true;
+      }
+      out.push("<tr>" + cells.map(cell => `<td>${inline(cell)}</td>`).join("") + "</tr>");
+      continue;
+    }
+
+    closeTable();
+
+    if (!trimmed) {
+      closeList();
+      continue;
+    }
+
+    const heading = trimmed.match(/^(#{1,3})\s+(.+)$/);
+    const bullet = trimmed.match(/^[-*]\s+(.+)$/);
+    const numbered = trimmed.match(/^\d+[.)]\s+(.+)$/);
+
+    if (heading) {
+      closeList();
+      const level = heading[1].length;
+      out.push(`<h${level + 2}>${inline(heading[2])}</h${level + 2}>`);
+    } else if (bullet || numbered) {
+      const type = bullet ? "ul" : "ol";
+      if (listType !== type) {
+        closeList();
+        listType = type;
+        out.push(`<${type}>`);
+      }
+      out.push(`<li>${inline((bullet || numbered)[1])}</li>`);
+    } else {
+      closeList();
+      out.push(`<p>${inline(trimmed)}</p>`);
+    }
+  }
+
+  closeList();
+  closeTable();
+  return out.join("");
+}
 function riskLabel(risk) {
   return ({high:"High risk",medium:"Medium risk",low:"Low indicators",inconclusive:"Inconclusive"})[risk] || "Inconclusive";
 }
 function riskClass(risk) { return `risk-${["high","medium","low","inconclusive"].includes(risk) ? risk : "inconclusive"}`; }
 function setLoading(button, loading, label) {
   button.disabled = loading;
-  if (loading) { button.dataset.originalText = button.innerHTML; button.textContent = label || "Checking…"; }
+  if (loading) { button.dataset.originalText = button.innerHTML; button.textContent = label || "CheckingÃ¢â‚¬Â¦"; }
   else if (button.dataset.originalText) { button.innerHTML = button.dataset.originalText; delete button.dataset.originalText; }
 }
 async function api(path, body) {
@@ -42,7 +113,7 @@ function renderResult(target, data, original, type) {
     <div class="result-top"><div><h3>${escapeHtml(data.title || "Analysis result")}</h3><p>${escapeHtml(data.summary || "Review the details below and verify independently.")}</p></div><span class="risk-pill ${riskClass(data.risk)}">${escapeHtml(riskLabel(data.risk))}</span></div>
     <div class="score-track" aria-label="Heuristic indicator score"><div class="score-fill" style="width:${score}%"></div></div>
     <div class="result-cols"><div><h4>Warning signs</h4><ul>${indicators}</ul></div><div><h4>Recommended next steps</h4><ul>${steps || "<li>Verify the request independently.</li>"}</ul></div></div>
-    <div class="result-footer"><span>${escapeHtml(data.confidence || "Screening only — not a guarantee")}</span><button class="btn btn-secondary btn-small" type="button" data-copy-result>Copy report</button></div>`;
+    <div class="result-footer"><span>${escapeHtml(data.confidence || "Screening only Ã¢â‚¬â€ not a guarantee")}</span><button class="btn btn-secondary btn-small" type="button" data-copy-result>Copy report</button></div>`;
   targetEl.classList.remove("hidden");
   targetEl.querySelector("[data-copy-result]").addEventListener("click", () => {
     const report = `${type.toUpperCase()} CHECK\nInput: ${original}\nResult: ${riskLabel(data.risk)}\nScore: ${score}/100 (heuristic only)\nSummary: ${data.summary}\nWarning signs: ${(data.indicators || []).map(x => typeof x === "string" ? x : x.label).join("; ") || "None found"}\nNext steps: ${(data.nextSteps || []).join("; ")}\nNote: This result does not prove whether content is safe.`;
@@ -69,7 +140,7 @@ function renderHistory() {
   if (!historyItems.length) { el.innerHTML = '<div class="empty-history">Your recent checks will appear here.</div>'; return; }
   el.innerHTML = historyItems.map(item => {
     const date = new Date(item.time);
-    return `<div class="history-item"><span class="history-type">${item.type === "url" ? "↗" : "▤"}</span><div class="history-detail"><strong title="${escapeHtml(item.input)}">${escapeHtml(item.input.replace(/\s+/g," "))}</strong><small>${escapeHtml(date.toLocaleString())} · ${item.type === "url" ? "URL check" : "Message check"}</small></div><span class="risk-pill ${riskClass(item.risk)}">${escapeHtml(riskLabel(item.risk))}</span><button type="button" data-delete-history="${escapeHtml(item.id)}" aria-label="Delete this history item" title="Delete">×</button></div>`;
+    return `<div class="history-item"><span class="history-type">${item.type === "url" ? "Ã¢â€ â€”" : "Ã¢â€“Â¤"}</span><div class="history-detail"><strong title="${escapeHtml(item.input)}">${escapeHtml(item.input.replace(/\s+/g," "))}</strong><small>${escapeHtml(date.toLocaleString())} Ã‚Â· ${item.type === "url" ? "URL check" : "Message check"}</small></div><span class="risk-pill ${riskClass(item.risk)}">${escapeHtml(riskLabel(item.risk))}</span><button type="button" data-delete-history="${escapeHtml(item.id)}" aria-label="Delete this history item" title="Delete">Ãƒâ€”</button></div>`;
   }).join("");
   $$("[data-delete-history]").forEach(btn => btn.addEventListener("click", () => {
     historyItems = historyItems.filter(x => x.id !== btn.dataset.deleteHistory); saveHistory(); renderHistory();
@@ -99,7 +170,7 @@ $("#messageForm").addEventListener("submit", async event => {
   event.preventDefault();
   const input = $("#messageInput").value.trim();
   if (!input) { showToast("Please paste a message first."); $("#messageInput").focus(); return; }
-  const btn = $("#analyseMessageBtn"); setLoading(btn, true, "Analysing…");
+  const btn = $("#analyseMessageBtn"); setLoading(btn, true, "AnalysingÃ¢â‚¬Â¦");
   try {
     const data = await api("/api/analyse", {text:input,type:"message"});
     renderResult("#messageResult", data, input, "message"); addHistory("message", input, data);
@@ -115,7 +186,7 @@ $("#urlForm").addEventListener("submit", async event => {
   event.preventDefault();
   const input = $("#urlInput").value.trim();
   if (!input) { showToast("Please enter a URL first."); return; }
-  const btn = $("#analyseUrlBtn"); setLoading(btn, true, "Checking…");
+  const btn = $("#analyseUrlBtn"); setLoading(btn, true, "CheckingÃ¢â‚¬Â¦");
   try {
     const data = await api("/api/analyse", {text:input,type:"url"});
     renderResult("#urlResult", data, input, "url"); addHistory("url", input, data);
@@ -130,7 +201,7 @@ function appendChat(role, message, small = "") {
   const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.textContent = role === "assistant" ? "S" : "Y";
   const bubble = document.createElement("div"); bubble.className = "bubble";
   const strong = document.createElement("strong"); strong.textContent = role === "assistant" ? "ScamShield" : "You";
-  const p = document.createElement("p"); p.textContent = message;
+  const p = document.createElement("p"); if (role === "assistant") p.innerHTML = renderMarkdown(message); else p.textContent = message;
   bubble.append(strong, p);
   if (small) { const meta = document.createElement("small"); meta.textContent = small; bubble.append(meta); }
   row.append(avatar, bubble); $("#chatMessages").append(row); $("#chatMessages").scrollTop = $("#chatMessages").scrollHeight;
@@ -139,12 +210,12 @@ function appendChat(role, message, small = "") {
 async function sendChat(message) {
   const trimmed = message.trim(); if (!trimmed) return;
   appendChat("user", trimmed); $("#chatInput").value = "";
-  const btn = $("#sendChatBtn"); setLoading(btn, true, "Thinking…");
-  const pending = appendChat("assistant", "Let me check the best guidance for this question…", "Please wait");
+  const btn = $("#sendChatBtn"); setLoading(btn, true, "ThinkingÃ¢â‚¬Â¦");
+  const pending = appendChat("assistant", "Let me check the best guidance for this questionÃ¢â‚¬Â¦", "Please wait");
   try {
     const data = await api("/api/chat", {message:trimmed});
     const p = pending.querySelector("p"); p.textContent = data.answer || "I could not produce an answer. Please try again.";
-    const small = pending.querySelector("small"); if (small) small.textContent = data.mode === "ai" ? "AI-assisted guidance · verify important facts" : "Rule-based demo guidance · not a guarantee";
+    const small = pending.querySelector("small"); if (small) small.textContent = data.mode === "nvidia-nim" ? "AI-assisted guidance - verify important facts" : "Rule-based demo guidance Ã‚Â· not a guarantee";
   } catch (err) {
     pending.querySelector("p").textContent = err.message || "The service is temporarily unavailable. Please try again.";
     const small = pending.querySelector("small"); if (small) small.textContent = "Could not get an answer";
@@ -175,9 +246,9 @@ async function checkHealth() {
     const response = await fetch("/api/health");
     const data = await response.json();
     if (!response.ok || !data.ok) throw new Error("Service unavailable");
-    $("#serviceStatus").textContent = data.geminiConfigured ? "AI connected" : "Demo mode";
+    $("#serviceStatus").textContent = data.nvidiaConfigured ? "AI connected" : "Demo mode";
     $(".status-dot").classList.toggle("online", true);
-    $("#footerMode").textContent = data.geminiConfigured ? "Gemini AI enabled" : "Rule-based demo mode";
+    $("#footerMode").textContent = data.nvidiaConfigured ? "NVIDIA AI enabled" : "Rule-based demo mode";
     $("#footerMode").title = data.message;
   } catch {
     $("#serviceStatus").textContent = "Server unavailable";
