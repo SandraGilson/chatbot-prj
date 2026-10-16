@@ -102,10 +102,31 @@ export default function handler(req, res) {
     });
   }
 
-  try {
-    const result = analyzeInput(body);
+  // Accept both the detection engine's canonical shape ({ content, type })
+  // and the existing frontend contract ({ text, type }).
+  const normalizedBody = {
+    type: body.type,
+    content: typeof body.content === "string" ? body.content : body.text,
+  };
 
-    return res.status(200).json(result);
+  try {
+    const result = analyzeInput(normalizedBody);
+    const indicators = result.indicators.map((indicator) => ({
+      ...indicator,
+      label: indicator.name,
+    }));
+
+    return res.status(200).json({
+      ...result,
+      // Compatibility fields used by the current ScamShield frontend.
+      risk: result.riskLevel,
+      title: result.type === "url" ? "URL analysis result" : "Message analysis result",
+      summary: result.disclaimer,
+      indicators,
+      nextSteps: [result.recommendation].filter(Boolean),
+      confidence: "Heuristic screening only; not a guarantee.",
+      scorePercent: Math.max(0, Math.min(100, result.score * 10)),
+    });
   } catch (error) {
     if (error instanceof TypeError || error instanceof RangeError) {
       return res.status(400).json({

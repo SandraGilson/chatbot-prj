@@ -204,7 +204,12 @@ export function createChatHandler({
     try {
       const reply = await generateReply(message);
 
-      return res.status(200).json({ reply });
+      return res.status(200).json({
+        reply,
+        // "answer" and "mode" are consumed by the existing frontend.
+        answer: reply,
+        mode: "ai",
+      });
     } catch (error) {
       if (error?.code === "MISSING_NVIDIA_API_KEY") {
         return res.status(503).json({

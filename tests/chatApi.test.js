@@ -61,6 +61,8 @@ test("valid question returns a reply", async () => {
     res.payload.reply,
     "Test reply: How can I recognize phishing?"
   );
+  assert.equal(res.payload.answer, res.payload.reply);
+  assert.equal(res.payload.mode, "ai");
 });
 
 test("missing NVIDIA key returns 503", async () => {
