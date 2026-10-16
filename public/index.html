@@ -26,7 +26,7 @@
         <span class="eyebrow"><span class="mini-shield">✓</span> YOUR EVERYDAY SCAM CHECKER</span>
         <h1>Think before you <span>click.</span></h1>
         <p>Review suspicious messages and links, understand the warning signs, and get practical next steps.</p>
-        <div class="hero-points"><span>✓ Private by design</span><span>✓ Clear explanations</span><span>✓ Safety-first guidance</span></div>
+        <div class="hero-points"><span>✓ History stays in this browser</span><span>✓ Clear explanations</span><span>✓ Safety-first guidance</span></div>
       </div>
       <div class="hero-art" aria-hidden="true">
         <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
@@ -47,7 +47,7 @@
       <div class="panel-heading"><div><span class="step-label">01 / MESSAGE REVIEW</span><h2>Check a suspicious message</h2><p>Paste an SMS, email, chat, or job offer. We’ll explain which warning signs the checks notice.</p></div><span class="panel-icon">▤</span></div>
       <form id="messageForm">
         <label for="messageInput">Message content</label>
-        <textarea id="messageInput" maxlength="10000" rows="7" placeholder="Paste the message here…&#10;&#10;Example: Your account will be blocked today. Click this link to verify your details." required></textarea>
+        <textarea id="messageInput" maxlength="2000" rows="7" placeholder="Paste the message here…&#10;&#10;Example: Your account will be blocked today. Click this link to verify your details." required></textarea>
         <div class="input-meta"><span>Remove personal details before pasting.</span><span id="messageCount">0 / 10,000</span></div>
         <div class="form-actions"><button class="btn btn-primary" type="submit" id="analyseMessageBtn"><span>⌕</span> Analyse message</button><button class="btn btn-secondary" type="button" id="sampleMessageBtn">Try sample</button><button class="btn btn-ghost" type="button" id="clearMessageBtn">Clear</button></div>
       </form>
@@ -71,7 +71,7 @@
       <div id="chatMessages" class="chat-messages" aria-live="polite">
         <div class="chat-row assistant"><div class="avatar">S</div><div class="bubble"><strong>ScamShield</strong><p>Hi! Tell me what happened, or ask how to recognise a scam. I’ll give cautious, practical guidance.</p><small>General guidance, not a guarantee</small></div></div>
       </div>
-      <form id="chatForm" class="chat-form"><label class="sr-only" for="chatInput">Ask ScamShield a question</label><textarea id="chatInput" rows="2" maxlength="4000" placeholder="e.g. Someone asked me for an OTP. What should I do?" required></textarea><button class="btn btn-primary" id="sendChatBtn" type="submit">Send <span>➤</span></button></form>
+      <form id="chatForm" class="chat-form"><label class="sr-only" for="chatInput">Ask ScamShield a question</label><textarea id="chatInput" rows="2" maxlength="2000" placeholder="e.g. Someone asked me for an OTP. What should I do?" required></textarea><button class="btn btn-primary" id="sendChatBtn" type="submit">Send <span>➤</span></button></form>
       <div class="quick-questions"><button type="button" data-question="I shared an OTP with someone. What should I do now?">I shared an OTP</button><button type="button" data-question="How can I check if a job offer is a scam?">Suspicious job offer</button><button type="button" data-question="I sent money to a suspected scammer. What should I do?">I sent money</button></div>
     </section>
 
@@ -98,6 +98,7 @@
 
   <footer><a class="footer-brand" href="/">ScamShield</a><span>Built for scam awareness · Verify before you trust</span><span id="footerMode">Starting…</span></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/config.js"></script>
   <script src="/app.js" defer></script>
 </body>
 </html>
